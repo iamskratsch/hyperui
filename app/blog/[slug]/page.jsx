@@ -1,16 +1,18 @@
-import matter from 'gray-matter'
+import { notFound } from 'next/navigation'
+
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { serialize } from 'next-mdx-remote/serialize'
 
 import rehypeExternalLinks from 'rehype-external-links'
-import remarkSlug from 'remark-slug'
+import rehypeSlug from 'rehype-slug'
 
-import { ogMeta, twitterMeta } from '@/data/metadata'
+import { ogMeta, twitterMeta } from '@data/metadata'
 
+import Ad from '@component/Ad'
 import Container from '@component/Container'
 import BlogPreview from '@component/BlogPreview'
-import TableContent from '@/components/BlogTableContent'
+import TableContent from '@component/BlogTableContent'
 import MdxRemoteRender from '@component/MdxRemoteRender'
 
 const mdxComponents = {
@@ -43,22 +45,24 @@ export async function generateStaticParams() {
 }
 
 async function getPost(params) {
-  const postPath = join(postsPath, `${params.slug}.mdx`)
-  const postItem = await fs.readFile(postPath, 'utf-8')
+  try {
+    const postPath = join(postsPath, `${params.slug}.mdx`)
+    const postItem = await fs.readFile(postPath, 'utf-8')
 
-  const { content, data: frontmatter } = matter(postItem)
+    const mdxSource = await serialize(postItem, {
+      parseFrontmatter: true,
+      mdxOptions: {
+        remarkPlugins: [],
+        rehypePlugins: [[rehypeExternalLinks, { target: '_blank' }], rehypeSlug],
+      },
+    })
 
-  const mdxSource = await serialize(content, {
-    mdxOptions: {
-      remarkPlugins: [remarkSlug],
-      rehypePlugins: [[rehypeExternalLinks, { target: '_blank' }]],
-    },
-    scope: frontmatter,
-  })
-
-  return {
-    blogData: frontmatter,
-    blogContent: mdxSource,
+    return {
+      blogData: mdxSource.frontmatter,
+      blogContent: mdxSource,
+    }
+  } catch {
+    notFound()
   }
 }
 
@@ -80,8 +84,10 @@ export default async function Page({ params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
 
-      <Container classNames="py-8 lg:py-12">
-        <article className="prose prose-img:rounded-lg mx-auto">
+      <Container id="mainContent" classNames="py-8 lg:py-12 space-y-8">
+        <Ad />
+
+        <article data-article className="prose mx-auto">
           <header>
             <time className="text-sm text-gray-700">{blogData.date}</time>
 
@@ -90,10 +96,7 @@ export default async function Page({ params }) {
 
           <TableContent />
 
-          <MdxRemoteRender
-            mdxSource={blogContent}
-            mdxComponents={mdxComponents}
-          />
+          <MdxRemoteRender mdxSource={blogContent} mdxComponents={mdxComponents} />
         </article>
       </Container>
     </>

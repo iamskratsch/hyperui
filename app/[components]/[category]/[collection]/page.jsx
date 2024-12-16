@@ -1,13 +1,14 @@
-import matter from 'gray-matter'
+import { notFound } from 'next/navigation'
+
 import { join } from 'path'
 import { promises as fs } from 'fs'
 import { serialize } from 'next-mdx-remote/serialize'
 
-import { ogMeta, twitterMeta } from '@/data/metadata'
+import { ogMeta, twitterMeta } from '@data/metadata'
 
+import Ad from '@component/Ad'
 import Container from '@component/Container'
 import MdxRemoteRender from '@component/MdxRemoteRender'
-import CollectionLinks from '@component/CollectionLinks'
 import CollectionList from '@component/CollectionList'
 
 const mdxComponents = {
@@ -40,29 +41,23 @@ export async function generateStaticParams() {
 }
 
 async function getCollection(params) {
-  const componentPath = join(
-    componentsDirectory,
-    `${params.category}-${params.collection}.mdx`
-  )
+  try {
+    const componentPath = join(componentsDirectory, `${params.category}-${params.collection}.mdx`)
+    const componentItem = await fs.readFile(componentPath, 'utf-8')
 
-  const postItem = await fs.readFile(componentPath, 'utf-8')
+    const mdxSource = await serialize(componentItem, {
+      parseFrontmatter: true,
+    })
 
-  const { content, data: frontmatter } = matter(postItem)
-
-  const mdxSource = await serialize(content, {
-    mdxOptions: {
-      remarkPlugins: [],
-      rehypePlugins: [],
-    },
-    scope: frontmatter,
-  })
-
-  return {
-    collectionData: {
-      ...frontmatter,
-      slug: params.collection,
-    },
-    collectionContent: mdxSource,
+    return {
+      collectionData: {
+        ...mdxSource.frontmatter,
+        slug: params.collection,
+      },
+      collectionContent: mdxSource,
+    }
+  } catch {
+    notFound()
   }
 }
 
@@ -70,7 +65,10 @@ export default async function Page({ params }) {
   const { collectionData, collectionContent } = await getCollection(params)
 
   const componentsData = {
-    componentContainer: collectionData.container || '',
+    componentContainer: {
+      previewInner: collectionData.container || '',
+      previewHeight: collectionData.wrapper || '',
+    },
     componentsData: Object.entries(collectionData.components).map(
       ([componentId, componentItem]) => {
         return {
@@ -79,6 +77,7 @@ export default async function Page({ params }) {
           slug: collectionData.slug,
           category: collectionData.category,
           container: componentItem.container || '',
+          wrapper: componentItem.wrapper || '',
           creator: componentItem.creator || '',
           dark: !!componentItem.dark,
           interactive: !!componentItem.interactive,
@@ -88,11 +87,8 @@ export default async function Page({ params }) {
   }
 
   return (
-    <Container classNames="py-8 lg:py-12 space-y-8 lg:space-y-12">
-      <CollectionLinks
-        activeCollection={params.collection}
-        activeCategory={params.category}
-      />
+    <Container id="mainContent" classNames="py-8 lg:py-12 space-y-8">
+      <Ad />
 
       <div className="prose max-w-none">
         <MdxRemoteRender

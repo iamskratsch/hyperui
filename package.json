@@ -1,39 +1,38 @@
 {
   "name": "hyperui",
   "scripts": {
+    "dev": "next dev --turbo",
     "build": "next build",
-    "start": "next start",
-    "dev": "next dev",
-    "lint": "next lint",
-    "css": "yarn css:components && yarn css:blogs",
-    "css:blogs": "npx tailwindcss -i src/styles/blogs.css -o public/blogs.css -m",
-    "css:components": "npx tailwindcss -i src/styles/components.css -o public/components.css -m",
-    "postbuild": "yarn css"
+    "lint": "next lint --fix",
+    "format": "prettier . --write"
   },
   "dependencies": {
-    "next": "^13.4.19",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "next": "14.2.10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.3",
-    "@tailwindcss/typography": "^0.5.10",
-    "autoprefixer": "^10.4.15",
-    "eslint": "^8.49.0",
-    "eslint-config-next": "^13.4.19",
-    "fast-glob": "^3.3.1",
-    "gray-matter": "^4.0.3",
-    "next-mdx-remote": "^4.4.1",
-    "postcss": "^8.4.29",
-    "prettier": "^3.0.3",
-    "prettier-plugin-tailwindcss": "^0.5.4",
+    "@next/eslint-plugin-next": "^14.2.6",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/postcss": "^4.0.0-beta.5",
+    "@tailwindcss/typography": "^0.5.15",
+    "data-table-of-content": "^1.1.1",
+    "eslint": "8.57.0",
+    "eslint-config-next": "^14.2.6",
+    "fast-glob": "^3.3.2",
+    "next-mdx-remote": "^5.0.0",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9",
     "prismjs": "^1.29.0",
-    "react-intersection-observer": "^9.5.2",
-    "react-use": "^17.4.0",
+    "react-intersection-observer": "^9.13.1",
+    "react-use": "^17.6.0",
     "rehype-external-links": "^3.0.0",
-    "remark": "^14.0.3",
-    "remark-html": "^15.0.1",
-    "remark-slug": "^7.0.1",
-    "tailwindcss": "^3.3.3"
-  }
+    "rehype-slug": "^6.0.0",
+    "remark": "^15.0.1",
+    "remark-html": "^16.0.1",
+    "tailwindcss": "^4.0.0-beta.5",
+    "zustand": "^5.0.2"
+  },
+  "packageManager": "yarn@1.22.22"
 }

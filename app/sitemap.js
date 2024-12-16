@@ -3,7 +3,7 @@ import { promises as fs } from 'fs'
 
 export default async function sitemap() {
   async function getCategories() {
-    const categorySlugs = ['application-ui', 'marketing', 'ecommerce']
+    const categorySlugs = ['application-ui', 'marketing']
 
     return await Promise.all(
       categorySlugs.map(async (categorySlug) => `components/${categorySlug}`)
@@ -13,7 +13,7 @@ export default async function sitemap() {
   async function getComponents() {
     const componentsPath = join(process.cwd(), '/src/data/components')
 
-    const categorySlugs = ['application-ui', 'marketing', 'ecommerce']
+    const categorySlugs = ['application-ui', 'marketing']
     const componentSlugs = await fs.readdir(componentsPath)
 
     const componentsByCategory = await Promise.all(
@@ -23,10 +23,7 @@ export default async function sitemap() {
             .filter((componentSlug) => componentSlug.includes(categorySlug))
             .map(async (componentSlug) => {
               const componentSlugFormatted = componentSlug.replace('.mdx', '')
-              const componentSlugTrue = componentSlugFormatted.replace(
-                `${categorySlug}-`,
-                ''
-              )
+              const componentSlugTrue = componentSlugFormatted.replace(`${categorySlug}-`, '')
 
               return `components/${categorySlug}/${componentSlugTrue}`
             })
@@ -53,11 +50,7 @@ export default async function sitemap() {
     )
   }
 
-  const siteSlugs = await Promise.all([
-    getCategories(),
-    getComponents(),
-    getBlogs(),
-  ])
+  const siteSlugs = await Promise.all([getCategories(), getComponents(), getBlogs()])
 
   const transformedSlugs = siteSlugs.flatMap((siteSlug) => {
     return siteSlug.flatMap((pageSlug) => {
@@ -75,6 +68,10 @@ export default async function sitemap() {
     },
     {
       url: 'https://www.hyperui.dev/about/faqs',
+      lastModified: new Date(),
+    },
+    {
+      url: 'https://www.hyperui.dev/about/acknowledgements',
       lastModified: new Date(),
     },
     {

@@ -2,40 +2,44 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useInView } from 'react-intersection-observer'
 
-import {
-  componentPreviewHtml,
-  componentPreviewJsx,
-  componentPreviewVue,
-} from '@util/transformers'
-import { componentBreakpoints } from '@data/breakpoints'
+import usePreferencesStore from '@store/preferences.store'
 
-import PreviewCreator from '@component/PreviewCreator'
+import { componentBreakpoints } from '@data/breakpoints'
+import { componentPreviewHtml, componentPreviewJsx, componentPreviewVue } from '@util/transformers'
+
 import PreviewBreakpoint from '@component/PreviewBreakpoint'
 import PreviewCode from '@component/PreviewCode'
 import PreviewCopy from '@component/PreviewCopy'
+import PreviewCreator from '@component/PreviewCreator'
 import PreviewDark from '@component/PreviewDark'
 import PreviewIframe from '@component/PreviewIframe'
 import PreviewInteractive from '@component/PreviewInteractive'
 import PreviewRtl from '@component/PreviewRtl'
 import PreviewTitle from '@component/PreviewTitle'
+import PreviewType from '@component/PreviewType'
 import PreviewView from '@component/PreviewView'
 
-export default function ComponentPreview({
-  componentData,
-  componentContainer,
-}) {
+export default function ComponentPreview({ componentData, componentContainer }) {
   const refIframe = useRef(null)
 
-  const [codeType, setCodeType] = useState('html')
+  const {
+    isRtl,
+    setIsRtl,
+    isDarkMode,
+    setIsDarkMode,
+    isInteractive,
+    setIsInteractive,
+    codeType,
+    setCodeType,
+    previewWidth,
+    setPreviewWidth,
+  } = usePreferencesStore()
+
   const [componentCode, setComponentCode] = useState('')
   const [componentHtml, setComponentHtml] = useState('')
   const [componentJsx, setComponentJsx] = useState('')
   const [componentVue, setComponentVue] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [isInteractive, setIsInteractive] = useState(false)
-  const [isRtl, setIsRtl] = useState(false)
   const [previewCode, setPreviewCode] = useState('')
-  const [previewWidth, setPreviewWidth] = useState('100%')
   const [showPreview, setShowPreview] = useState(true)
 
   const { ref, inView } = useInView({
@@ -54,21 +58,14 @@ export default function ComponentPreview({
     interactive: componentHasInteractive,
   } = componentData
 
-  const trueComponentContainer = componentSpace
-    ? componentSpace
-    : componentContainer
+  const trueComponentContainer = componentSpace || componentContainer?.previewInner
+  const componentWrapper = componentContainer?.previewHeight || 'h-[400px] lg:h-[600px]'
 
   const componentHash = `component-${componentId}`
 
-  useEffect(() => {
-    if (inView) {
-      fetchHtml({
-        useDark: isDarkMode,
-      })
-    }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inView])
+  const isHtml = codeType === 'html'
+  const isJsx = codeType === 'jsx'
+  const isVue = codeType === 'vue'
 
   useEffect(() => {
     if (inView) {
@@ -79,7 +76,7 @@ export default function ComponentPreview({
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDarkMode, isInteractive])
+  }, [inView, isDarkMode, isInteractive])
 
   useEffect(() => {
     if (inView) {
@@ -97,10 +94,9 @@ export default function ComponentPreview({
   }, [isRtl])
 
   useEffect(() => {
-    codeType === 'html' && setPreviewCode(componentCode)
-    codeType === 'jsx' && setPreviewCode(componentJsx)
-    codeType === 'vue' && setPreviewCode(componentVue)
-
+    setPreviewCode(
+      isHtml ? componentCode : isJsx ? componentJsx : isVue ? componentVue : componentCode
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeType])
 
@@ -110,11 +106,7 @@ export default function ComponentPreview({
     const useDarkMode = componentHasDark && useDark
     const useInteractiveMode = componentHasInteractive && useInteractive
 
-    const componentPath = [
-      componentId,
-      useDarkMode && 'dark',
-      useInteractiveMode && 'interactive',
-    ]
+    const componentPath = [componentId, useDarkMode && 'dark', useInteractiveMode && 'interactive']
       .filter(Boolean)
       .join('-')
 
@@ -131,7 +123,9 @@ export default function ComponentPreview({
     const transformedJsx = componentPreviewJsx(textResponse)
     const transformedVue = componentPreviewVue(textResponse)
 
-    setPreviewCode(textResponse)
+    setPreviewCode(
+      isHtml ? textResponse : isJsx ? transformedJsx : isVue ? transformedVue : textResponse
+    )
     setComponentCode(textResponse)
     setComponentHtml(transformedHtml)
     setComponentJsx(transformedJsx)
@@ -141,26 +135,15 @@ export default function ComponentPreview({
   return (
     <div ref={ref} id={componentHash}>
       <div className="space-y-4">
-        <PreviewTitle
-          componentTitle={componentTitle}
-          componentHash={componentHash}
-        />
+        <PreviewTitle componentTitle={componentTitle} componentHash={componentHash} />
 
-        <div className="lg:flex lg:items-end">
+        <div className="lg:flex lg:items-center">
           {componentCode && (
-            <div className="flex flex-wrap items-end gap-4">
-              <PreviewView
-                handleSetShowPreview={setShowPreview}
-                showPreview={showPreview}
-              />
-
-              <PreviewCopy componentCode={previewCode} />
+            <div className="flex flex-wrap items-center gap-2">
+              <PreviewView handleSetShowPreview={setShowPreview} showPreview={showPreview} />
 
               {componentHasDark && (
-                <PreviewDark
-                  isDarkMode={isDarkMode}
-                  handleSetIsDarkMode={setIsDarkMode}
-                />
+                <PreviewDark isDarkMode={isDarkMode} handleSetIsDarkMode={setIsDarkMode} />
               )}
 
               {componentHasInteractive && (
@@ -171,16 +154,22 @@ export default function ComponentPreview({
               )}
 
               <PreviewRtl isRtl={isRtl} handleSetIsRtl={setIsRtl} />
+
+              <div className="hidden sm:flex">
+                <PreviewType
+                  componentId={componentId}
+                  codeType={codeType}
+                  handleSetCodeType={setCodeType}
+                />
+
+                <PreviewCopy componentCode={previewCode} />
+              </div>
             </div>
           )}
 
-          <div className="hidden lg:flex lg:flex-1 lg:items-end lg:justify-end lg:gap-4">
+          <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:gap-2">
             {componentBreakpoints.map(
-              ({
-                name: breakpointName,
-                emoji: breakpointEmoji,
-                width: breakpointWidth,
-              }) => (
+              ({ name: breakpointName, emoji: breakpointEmoji, width: breakpointWidth }) => (
                 <PreviewBreakpoint
                   key={breakpointName}
                   breakpointText={breakpointName}
@@ -191,6 +180,8 @@ export default function ComponentPreview({
                 />
               )
             )}
+
+            <p className="text-sm font-medium text-gray-700">@ {previewWidth}</p>
           </div>
         </div>
 
@@ -201,13 +192,14 @@ export default function ComponentPreview({
               componentHtml={componentHtml}
               componentTitle={componentTitle}
               previewWidth={previewWidth}
+              previewHeight={componentWrapper}
               refIframe={refIframe}
               previewDark={componentHasDark && isDarkMode}
             />
 
             <PreviewCode
+              componentId={componentId}
               showPreview={showPreview}
-              handleSetType={setCodeType}
               codeType={codeType}
               showToggle={!isInteractive}
               componentCode={previewCode}
@@ -215,9 +207,7 @@ export default function ComponentPreview({
           </div>
         </div>
 
-        {componentCreator && (
-          <PreviewCreator creatorGithub={componentCreator} />
-        )}
+        {componentCreator && <PreviewCreator creatorGithub={componentCreator} />}
       </div>
     </div>
   )

@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 
-import matter from 'gray-matter'
 import { join } from 'path'
 import { promises as fs } from 'fs'
+import { serialize } from 'next-mdx-remote/serialize'
 
 async function getComponents() {
   const componentsPath = join(process.cwd(), '/src/data/components')
   const categoriesPath = join(process.cwd(), '/src/data/categories')
 
-  const categorySlugs = ['application-ui', 'marketing', 'ecommerce']
+  const categorySlugs = ['application-ui', 'marketing']
   const componentSlugs = await fs.readdir(componentsPath)
 
   const componentsByCategory = await Promise.all(
@@ -16,7 +16,9 @@ async function getComponents() {
       const categoryPath = join(categoriesPath, `${categorySlug}.mdx`)
       const categoryItem = await fs.readFile(categoryPath, 'utf-8')
 
-      const { data: categoryData } = matter(categoryItem)
+      const { frontmatter: categoryData } = await serialize(categoryItem, {
+        parseFrontmatter: true,
+      })
 
       const componentItems = await Promise.all(
         componentSlugs
@@ -25,16 +27,13 @@ async function getComponents() {
             const componentPath = join(componentsPath, componentSlug)
             const componentItem = await fs.readFile(componentPath, 'utf-8')
 
-            const { data: componentData } = matter(componentItem)
+            const { frontmatter: componentData } = await serialize(componentItem, {
+              parseFrontmatter: true,
+            })
 
             const componentSlugFormatted = componentSlug.replace('.mdx', '')
-            const componentSlugTrue = componentSlugFormatted.replace(
-              `${categorySlug}-`,
-              ''
-            )
-            const componentCount = Object.values(
-              componentData.components
-            ).length
+            const componentSlugTrue = componentSlugFormatted.replace(`${categorySlug}-`, '')
+            const componentCount = Object.values(componentData.components).length
 
             return {
               id: componentSlugFormatted,
@@ -50,6 +49,8 @@ async function getComponents() {
             }
           })
       )
+
+      componentItems.sort((itemA, itemB) => itemA.title.localeCompare(itemB.title))
 
       return componentItems
     })

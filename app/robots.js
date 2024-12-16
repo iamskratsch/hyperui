@@ -1,10 +1,9 @@
 export default function robots() {
-    return {
-      rules: {
-        userAgent: '*',
-        allow: '/',
-        disallow: ['/components/', '/blogs/']
-      },
-      sitemap: 'https://www.hyperui.dev/sitemap.xml',
-    }
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+    },
+    sitemap: 'https://www.hyperui.dev/sitemap.xml',
   }
+}

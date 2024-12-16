@@ -1,6 +1,6 @@
 'use client'
 
-import { faqItems } from '@/data/faqs'
+import { faqItems } from '@data/faqs'
 
 export default function FaqList() {
   const schemaData = {
@@ -29,12 +29,10 @@ export default function FaqList() {
 
       <ul className="list-none p-0">
         {faqItems.map((faqItem, faqIndex) => (
-          <li key={faqIndex}>
+          <li key={faqIndex} className="rounded-lg bg-gray-50 p-4">
             <details className="group" open={faqIndex === 0}>
               <summary className="flex cursor-pointer items-center justify-between text-gray-900">
-                <strong className="text-lg font-medium">
-                  {faqItem.question}
-                </strong>
+                <strong className="text-lg font-medium">{faqItem.question}</strong>
 
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -42,7 +40,7 @@ export default function FaqList() {
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
                   stroke="currentColor"
-                  className="h-5 w-5 transition group-open:rotate-180"
+                  className="size-5 shrink-0 transition group-open:rotate-180"
                 >
                   <path
                     strokeLinecap="round"

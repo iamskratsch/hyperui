@@ -1,21 +1,21 @@
-import matter from 'gray-matter'
+import { notFound } from 'next/navigation'
+
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { serialize } from 'next-mdx-remote/serialize'
 
 import rehypeExternalLinks from 'rehype-external-links'
-import remarkSlug from 'remark-slug'
+import rehypeSlug from 'rehype-slug'
 
-import { ogMeta, twitterMeta } from '@/data/metadata'
+import { ogMeta, twitterMeta } from '@data/metadata'
 
-import FaqList from '@/components/FaqList'
-import SponsorGrid from '@/components/SponsorGrid'
+import Ad from '@component/Ad'
+import FaqList from '@component/FaqList'
 import Container from '@component/Container'
 import MdxRemoteRender from '@component/MdxRemoteRender'
 
 const mdxComponents = {
   FaqList,
-  SponsorGrid,
 }
 
 const pagesPath = join(process.cwd(), '/src/data/pages')
@@ -44,35 +44,38 @@ export async function generateStaticParams() {
 }
 
 async function getPage(params) {
-  const pagePath = join(pagesPath, `${params.slug}.mdx`)
-  const pageItem = await fs.readFile(pagePath, 'utf-8')
+  try {
+    const pagePath = join(pagesPath, `${params.slug}.mdx`)
+    const pageItem = await fs.readFile(pagePath, 'utf-8')
 
-  const { content, data: frontmatter } = matter(pageItem)
+    const mdxSource = await serialize(pageItem, {
+      parseFrontmatter: true,
+      mdxOptions: {
+        remarkPlugins: [],
+        rehypePlugins: [[rehypeExternalLinks, { target: '_blank' }], rehypeSlug],
+      },
+    })
 
-  const mdxSource = await serialize(content, {
-    mdxOptions: {
-      remarkPlugins: [remarkSlug],
-      rehypePlugins: [[rehypeExternalLinks, { target: '_blank' }]],
-    },
-    scope: frontmatter,
-  })
-
-  return {
-    pageData: frontmatter,
-    pageContent: mdxSource,
+    return {
+      pageData: mdxSource.frontmatter,
+      pageContent: mdxSource,
+    }
+  } catch {
+    notFound()
   }
 }
 
 export default async function Page({ params }) {
-  const { pageContent } = await getPage(params)
+  const { pageData, pageContent } = await getPage(params)
 
   return (
-    <Container classNames="py-8 lg:py-12">
+    <Container id="mainContent" classNames="py-8 lg:py-12 space-y-8">
+      <Ad />
+
       <article className="prose mx-auto">
-        <MdxRemoteRender
-          mdxSource={pageContent}
-          mdxComponents={mdxComponents}
-        />
+        <h1>{pageData.title}</h1>
+
+        <MdxRemoteRender mdxSource={pageContent} mdxComponents={mdxComponents} />
       </article>
     </Container>
   )

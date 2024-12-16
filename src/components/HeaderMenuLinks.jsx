@@ -1,24 +1,17 @@
 import Link from 'next/link'
 
-export default function HeaderMenuLinks({ menuLinks, navClass, ulClass }) {
+export default function HeaderMenuLinks({ menuLinks, navClass = '', ulClass = '' }) {
   return (
-    <nav aria-label="Global" className={navClass && navClass}>
-      <ul className={ulClass && ulClass}>
-        {menuLinks.map((menuLink, index, { length }) => {
-          const isLast = index === length - 1
-
+    <nav className={navClass}>
+      <ul className={ulClass}>
+        {menuLinks.map(({ href, title }) => {
           return (
-            <li key={menuLink.href} className={isLast ? 'lg:ms-auto' : ''}>
+            <li key={href}>
               <Link
-                href={menuLink.href}
-                {...(menuLink.external && {
-                  target: '_blank',
-                  rel: 'noreferrer',
-                })}
+                href={href}
+                className="inline-flex items-center gap-1 text-sm font-medium text-gray-900 hover:opacity-75"
               >
-                <div className="block text-xs font-medium text-gray-900 hover:opacity-75">
-                  {menuLink.title}
-                </div>
+                {title}
               </Link>
             </li>
           )
